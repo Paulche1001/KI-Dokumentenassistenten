@@ -1,7 +1,7 @@
 # KI-Dokumentenassistent
 
 Lern- und Portfolio-Projekt mit React, TypeScript, Tailwind CSS und FastAPI.
-Aktueller Stand: Schritt 1, Frontend mit Backend-Statusanzeige.
+Aktueller Stand: Schritt 2, PDF-Upload mit seitenweiser Textvorschau und Backend-Statusanzeige.
 
 ## Voraussetzungen
 
@@ -72,6 +72,16 @@ Der Health-Endpunkt prüft nur die Erreichbarkeit der API; Ollama und Datenbank 
 
 ## Pruefen
 
+Im Backend-Ordner (HTTPX wird nur für die Tests benötigt):
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+Die Tests erzeugen PDFs im Speicher und prüfen Text und Seitennummern,
+leere Seiten, Passwortschutz, falsche Dateien sowie Größen- und Seitenlimits.
+
 Im Frontend-Ordner:
 
 ```powershell
@@ -82,14 +92,72 @@ Das prüft TypeScript und erzeugt den Produktionsbuild in `dist/`.
 
 ## Nächster Schritt
 
-Schritt 2: PDF-Upload und seitenweise Textextraktion mit PyMuPDF.
+Schritt 3: Text in sinnvolle Abschnitte aufteilen (Chunking), mit Seitennummern.
 RAG, Embeddings und Ollama folgen in späteren Schritten.
+
+## Schritt 2 verstehen: vom PDF zum Text
+
+Wenn du Schritt 1 bereits installiert hast, installiere die neuen Backend-Abhängigkeiten
+im Ordner `backend` mit `.\.venv\Scripts\python.exe -m pip install -e ".[dev]"`.
+Starte das Backend anschließend neu. Das Frontend startest du wie oben mit `npm.cmd run dev`.
+
+```text
+DocumentUpload.tsx → FormData → POST /api/documents/extract
+                  → API-Router → extract_pdf → JSON → Textvorschau
+```
+
+1. `frontend/src/components/DocumentUpload.tsx` enthält das Formular und speichert
+   Dateiauswahl, Ladezustand, Fehlermeldung und Ergebnis mit `useState`.
+2. `frontend/src/api/documents.ts` verpackt die Datei mit `FormData` als
+   `multipart/form-data`. Der Browser setzt den passenden Content-Type inklusive
+   Trennmarkierung. Wir setzen diesen Header deshalb nicht selbst.
+3. `backend/app/api/documents.py` nimmt die Datei als `UploadFile` an und prüft
+   Endung, leeren Inhalt und das Größenlimit von 10 MiB. Die synchrone Route läuft
+   in FastAPIs Threadpool, damit die PDF-Verarbeitung nicht die Async-Ereignisschleife blockiert.
+4. `backend/app/services/pdf.py` öffnet die Bytes mit PyMuPDF und prüft den tatsächlichen
+   Dokumenttyp. `page.get_text("text", sort=True)` liest den Text pro Seite mit einer
+   geometrisch sortierten Lesereihenfolge. Komplexe Spalten und Tabellen können dennoch
+   Nacharbeit erfordern. Ein PDF darf in diesem Schritt höchstens 200 Seiten haben.
+5. `backend/app/schemas/documents.py` beschreibt das JSON-Antwortformat mit Pydantic.
+   Die PDF-Seiten zählen wir für die Anzeige ab 1. Auch leere Seiten bleiben erhalten,
+   damit die späteren Quellenangaben stimmen. Die Nummer meint die physische PDF-Seite,
+   nicht eine eventuell abweichende gedruckte Seitenzahl.
+6. Das Frontend prüft das Antwortformat zur Laufzeit und zeigt Text pro Seite an.
+   TypeScript-Typen allein prüfen keine vom Netzwerk empfangenen Daten.
+
+Es wird noch kein Dokument dauerhaft gespeichert. FastAPI kann Uploads während der
+Anfrage in einer temporären Datei zwischenspeichern; diese wird anschließend geschlossen.
+Bei vollständig fehlendem Text liefert die API eine Fehlermeldung mit OCR-Hinweis.
+Bei einzelnen leeren Seiten zeigt sie eine Warnung. Das ist ein Hinweis auf möglicherweise
+gescannte Seiten, keine sichere Scan-Erkennung. Gemischte Bild-/Textseiten werden nicht per OCR ergänzt.
+Das 10-MiB-Limit prüft die Anwendungslogik nach dem Multipart-Empfang;
+ein Upload-Limit vor dem Empfang gehört zu einem späteren Deployment.
+
+### Selbst ausprobieren
+
+1. Lade ein kleines PDF mit auswählbarem Text hoch und vergleiche die Vorschau mit dem Original.
+2. Prüfe im Browser unter Netzwerk die POST-Anfrage und ihre JSON-Antwort.
+3. Lade ein gescanntes oder leeres PDF hoch und beobachte den OCR-Hinweis.
+4. Öffne `/docs` und teste `POST /api/documents/extract` direkt ohne React.
+
+Beispiel einer erfolgreichen Antwort:
+
+```json
+{
+  "filename": "beispiel.pdf",
+  "page_count": 1,
+  "pages": [{"page_number": 1, "text": "Text der ersten Seite"}],
+  "warnings": []
+}
+```
 
 ## Dokumentation
 
 - Vite: https://vite.dev/guide/
 - Tailwind mit Vite: https://tailwindcss.com/docs/installation/using-vite
 - FastAPI: https://fastapi.tiangolo.com/tutorial/first-steps/
+- Datei-Uploads: https://fastapi.tiangolo.com/tutorial/request-files/
+- PyMuPDF-Textextraktion: https://pymupdf.readthedocs.io/en/latest/recipes-text.html
 
 ## Entwicklung mit Git und GitHub
 

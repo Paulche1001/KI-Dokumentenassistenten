@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { checkHealth } from './api/health'
+import DocumentUpload from './components/DocumentUpload'
 
 type Connection = 'loading' | 'connected' | 'error'
 
@@ -34,7 +35,7 @@ export default function App() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-16 text-slate-900">
       <div className="mx-auto max-w-2xl">
-        <p className="text-sm font-semibold tracking-wide text-teal-700">Lernprojekt / Schritt 1</p>
+        <p className="text-sm font-semibold tracking-wide text-teal-700">Lernprojekt / Schritt 2</p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight">KI-Dokumentenassistent</h1>
         <p className="mt-5 text-lg leading-relaxed text-slate-600">
           Hier entsteht Schritt für Schritt ein Assistent, der Fragen zu deinen PDF-Dokumenten beantwortet.
@@ -53,6 +54,7 @@ export default function App() {
             Verbindung prüfen
           </button>
         </section>
+        <DocumentUpload />
       </div>
     </main>
   )

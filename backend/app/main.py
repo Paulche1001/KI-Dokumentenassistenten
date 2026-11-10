@@ -3,7 +3,10 @@ from typing import Literal
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from app.api.documents import router as documents_router
+
 app = FastAPI(title="KI-Dokumentenassistent", version="0.1.0")
+app.include_router(documents_router)
 
 
 class HealthResponse(BaseModel):
