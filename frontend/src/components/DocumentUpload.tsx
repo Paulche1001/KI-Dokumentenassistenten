@@ -68,7 +68,7 @@ export default function DocumentUpload() {
       {result && (
         <div className="mt-6">
           <p role="status" className="break-words font-medium text-teal-700">
-            {result.filename}: {result.page_count} Seite(n) verarbeitet.
+            {result.filename}: {result.page_count} Seite(n) verarbeitet, davon {result.pages.filter(page => page.text.length > 0).length} mit Text
           </p>
           {result.warnings.map(warning => (
             <p key={warning} className="mt-3 text-amber-800">{warning}</p>
@@ -76,7 +76,9 @@ export default function DocumentUpload() {
           <div className="mt-4 max-h-[36rem] space-y-3 overflow-y-auto">
             {result.pages.map(page => (
               <details key={page.page_number} open={page.page_number === 1} className="rounded-lg border border-slate-200 p-4">
-                <summary className="cursor-pointer font-medium">Seite {page.page_number}</summary>
+                <summary className="cursor-pointer font-medium">Seite {page.page_number} - {page.text.length} Zeichen 
+                  {!page.text && " (Kein Text)"}
+                </summary>
                 <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">
                   {page.text || 'Kein auslesbarer Text auf dieser Seite.'}
                 </p>

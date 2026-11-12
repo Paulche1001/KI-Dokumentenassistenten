@@ -22,7 +22,7 @@ export async function extractDocument(file: File): Promise<DocumentExtraction> {
     if (typeof data === 'object' && data !== null && 'detail' in data && typeof data.detail === 'string') {
       throw new Error(data.detail)
     }
-    throw new Error(`Upload fehlgeschlagen (HTTP ${response.status}). Ist das Backend gestartet?`)
+    throw new Error(`Upload fehlgeschlagen (HTTP ${response.status}).`)
   }
   if (!isDocumentExtraction(data)) {
     throw new Error('Das Backend hat ein unerwartetes Antwortformat geliefert.')

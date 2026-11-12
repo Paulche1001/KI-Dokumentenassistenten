@@ -17,15 +17,23 @@ def extract_pdf(content: bytes, filename: str) -> DocumentExtraction:
                 raise PDFExtractionError("Die Datei ist kein gültiges PDF.")
             if document.needs_pass:
                 raise PDFExtractionError(
-                    "Das PDF ist passwortgeschützt. Bitte lade eine ungeschützte Kopie hoch."
+                    "Das PDF ist passwortgeschützt!"
                 )
             if document.page_count > MAX_PAGES:
                 raise PDFExtractionError(f"Bitte verwende ein PDF mit höchstens {MAX_PAGES} Seiten.")
 
-            pages = [
-                DocumentPage(page_number=index + 1, text=page.get_text("text", sort=True).strip())
-                for index, page in enumerate(document)
-            ]
+            pages = []
+
+            for index, page in enumerate(document):
+                extracted_text = page.get_text("text", sort=True).strip()
+
+                document_page = DocumentPage(
+                    page_number=index + 1,
+                    text=extracted_text,
+                )
+                pages.append(document_page)
+
+
     except (pymupdf.FileDataError, pymupdf.EmptyFileError, RuntimeError) as error:
         raise PDFExtractionError("Das PDF ist beschädigt oder kann nicht gelesen werden.") from error
 
@@ -34,6 +42,13 @@ def extract_pdf(content: bytes, filename: str) -> DocumentExtraction:
             "Das PDF enthält keinen auslesbaren Text. Es könnte ein Scan sein; "
             "eine OCR-Texterkennung ist noch nicht eingebaut."
         )
+
+    page_count = 0
+    for page in pages:
+        if page.text:
+            page_count += 1
+    print(f"Seiten mit Text: {page_count} von {len(pages)}")
+    
 
     empty_pages = [str(page.page_number) for page in pages if not page.text]
     warnings = []
