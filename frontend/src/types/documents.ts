@@ -8,6 +8,13 @@ export type DocumentExtraction = {
   page_count: number
   pages: DocumentPage[]
   warnings: string[]
+  chunks: DocumentChunk[]
+}
+
+export type DocumentChunk = {
+  chunk_index: number
+  page_number: number
+  text: string
 }
 
 export function isDocumentExtraction(value: unknown): value is DocumentExtraction {
@@ -24,5 +31,12 @@ export function isDocumentExtraction(value: unknown): value is DocumentExtractio
     )) &&
     'warnings' in value && Array.isArray(value.warnings) &&
     value.warnings.every((warning: unknown) => typeof warning === 'string')
+    && 'chunks' in value && Array.isArray(value.chunks) &&
+    value.chunks.every((chunk: unknown) => (
+      typeof chunk === 'object' && chunk !== null &&
+      'chunk_index' in chunk && Number.isInteger(chunk.chunk_index) &&
+      'page_number' in chunk && Number.isInteger(chunk.page_number) &&
+      'text' in chunk && typeof chunk.text === 'string'
+    ))
   )
 }

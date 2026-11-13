@@ -1,5 +1,6 @@
 import pymupdf
 
+from app.services.chunking import chunk_pages
 from app.schemas.documents import DocumentExtraction, DocumentPage
 
 MAX_PAGES = 200
@@ -58,6 +59,8 @@ def extract_pdf(content: bytes, filename: str) -> DocumentExtraction:
             + ". Diese Seiten sind leer oder benötigen möglicherweise OCR."
         )
 
+    chunks = chunk_pages(pages, chunk_size=500, overlap=50)
+
     return DocumentExtraction(
-        filename=filename, page_count=len(pages), pages=pages, warnings=warnings
+        filename=filename, page_count=len(pages), pages=pages, warnings=warnings, chunks=chunks
     )
